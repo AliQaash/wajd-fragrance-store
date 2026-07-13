@@ -1,0 +1,15 @@
+{
+  "name": "wajd-playwright-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Playwright end-to-end tests for the Wajd app. Lives outside client/ and server/ on purpose so it never touches the app's own code or dependencies.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}
