@@ -1,5 +1,10 @@
 # Wajd — Fine Fragrances
 
+**Live demo:** [wajd-fragrance-store.vercel.app](https://wajd-fragrance-store.vercel.app)
+**API:** [wajd-fragrance-store.onrender.com](https://wajd-fragrance-store.onrender.com)
+
+> The backend runs on Render's free tier, which spins down after 15 minutes of inactivity. If the demo looks slow to load the first time, that's the server waking up — give it 30-50 seconds and it'll be fast after.
+
 A full-stack fragrance e-commerce store: perfumes and concentrated oils, quantity-based bulk pricing, an admin dashboard with an AI-powered product description writer, and import/export-ready product data (HS codes, MOQ, carton sizing).
 
 Originally built as an attar (traditional perfume oil) shop, rebuilt here as a general fragrance retailer with a proper MERN backend and cleaner code throughout.
@@ -35,6 +40,19 @@ client/   React frontend
 ```
 
 ## Running locally
+
+### Option A — one command (recommended)
+
+From the project root:
+
+```bash
+npm run install:all   # installs both server and client dependencies
+npm run dev            # runs backend and frontend together
+```
+
+This uses `concurrently` to run the Express API and the React dev server in a single terminal, color-coded (`SERVER` in blue, `CLIENT` in magenta) so you can tell which log line came from which. You still need both `.env` files set up first — see below.
+
+### Option B — two terminals
 
 ### 1. Backend
 
@@ -73,10 +91,19 @@ See `server/.env.example` and `client/.env.example` for the full list. Notably:
 
 ## Screenshots
 
-*(Add screenshots of the storefront, product detail, cart, and admin dashboard here before publishing.)*
+![Storefront](docs/screenshots/shop.png)
+![Product detail with bulk pricing](docs/screenshots/product-detail.png)
+![Admin dashboard](docs/screenshots/admin.png)
 
 ## Deployment
 
-- **Frontend:** Vercel or Netlify (static build from `client/`)
-- **Backend:** Render or Railway (Node service from `server/`)
-- **Database:** MongoDB Atlas (free tier is sufficient for a demo)
+Live version of this project:
+
+- **Frontend:** deployed on Vercel (Create React App build from `client/`)
+- **Backend:** deployed on Render as a Node web service (`server/`, root directory set to `server`, build command `npm install`, start command `npm start`)
+- **Database:** MongoDB Atlas (free M0 cluster)
+
+Notes for anyone deploying their own copy:
+- Set `CLIENT_ORIGIN` on the backend host to the exact frontend URL (not `*`) once the frontend is live, so CORS is locked down instead of wide open.
+- Add the frontend's domain to Firebase Console → Authentication → Settings → Authorized domains, or login will fail on the deployed site even though it works locally.
+- Render's free tier sleeps after 15 minutes idle; Railway is a paid alternative without that cold-start delay if it matters for a client demo.
