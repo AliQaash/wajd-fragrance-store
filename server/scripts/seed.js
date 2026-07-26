@@ -108,7 +108,7 @@ const products = [
     notes: { top: ["Pear", "Cardamom"], heart: ["Praline", "Iris"], base: ["Vanilla", "Tonka Bean"] },
     description:
       "Soft and warm, built to feel like moonlight rather than dessert: pear and cardamom up front, praline and iris through the heart, vanilla and tonka settling underneath.",
-    imageUrl: "",
+    imageUrl: `${REPO}/qamar.png`,
     variants: [
       {
         size: "30ml", price: 58, stock: 220, moq: 1, cartonSize: 12,
@@ -165,7 +165,7 @@ const products = [
     notes: { top: ["White Tea", "Yuzu"], heart: ["Orange Blossom", "Neroli"], base: ["White Musk"] },
     description:
       "Light and radiant, close to skin. White tea and yuzu open into orange blossom and neroli, resting on a clean white musk that never gets heavy.",
-    imageUrl: "",
+    imageUrl: `${REPO}/nur.png`,
     variants: [
       {
         size: "30ml", price: 44, stock: 280, moq: 1, cartonSize: 12,
