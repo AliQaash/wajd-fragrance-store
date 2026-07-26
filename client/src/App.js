@@ -94,7 +94,13 @@ function ProductDetail({ product, onClose, onAddToCart }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <span className="close-modal" onClick={onClose}>&times;</span>
-        <div className="product-img detail-img">{BRAND.ar}</div>
+        <div className="product-img detail-img">
+          {product.imageUrl ? (
+            <img src={product.imageUrl} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            BRAND.ar
+          )}
+        </div>
         <div className="detail-title">{product.name}</div>
         <div className="detail-meta">{product.concentration} &middot; {product.family}</div>
         {product.description && <p style={{ marginTop: 10, fontSize: 14, color: "var(--smoke)" }}>{product.description}</p>}
@@ -162,7 +168,13 @@ function Shop({ onAddToCart }) {
         <div className="grid">
           {products.map((p) => (
             <div key={p._id} className="product-card" onClick={() => setSelected(p)}>
-              <div className="product-img">{BRAND.ar}</div>
+              <div className="product-img">
+                {p.imageUrl ? (
+                  <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  BRAND.ar
+                )}
+              </div>
               <div className="product-info">
                 <div className="product-name">{p.name}</div>
                 <div className="product-notes">{p.family} &middot; {p.concentration}</div>
@@ -431,7 +443,13 @@ function AdminProducts({ user }) {
       <div className="grid">
         {products.map((p) => (
           <div key={p._id} className="product-card">
-            <div className="product-img">{BRAND.ar}</div>
+            <div className="product-img">
+              {p.imageUrl ? (
+                <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                BRAND.ar
+              )}
+            </div>
             <div className="product-info">
               <div className="product-name">{p.name}</div>
               <div className="product-notes">{p.type} &middot; {p.family}</div>
