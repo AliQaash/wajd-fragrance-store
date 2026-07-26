@@ -8,6 +8,7 @@ const Product = require("../src/models/Product");
 const HS_PERFUME = "3303.00";
 const HS_OIL = "3301.29";
 const HS_INCENSE = "3307.90";
+const REPO = "https://raw.githubusercontent.com/AliQaash/wajd-fragrance-store/main/docs/product-images";
 
 const products = [
   // ---------------- SPRAYS (Eau de Parfum / Eau de Toilette) ----------------
@@ -21,7 +22,7 @@ const products = [
     notes: { top: ["Saffron", "Bergamot"], heart: ["Rose", "Oud"], base: ["Amber", "Sandalwood"] },
     description:
       "A dark, resinous oud built around saffron and rose, settling into a long amber base. Wears close to the skin, made for evenings.",
-    imageUrl: "",
+    imageUrl: `${REPO}/layl.png`,
     variants: [
       {
         size: "30ml", price: 68, stock: 240, moq: 1, cartonSize: 12,
@@ -50,7 +51,7 @@ const products = [
     notes: { top: ["Green Notes", "Lychee"], heart: ["Taif Rose", "Peony"], base: ["Musk", "Cedar"] },
     description:
       "Named for the Taif rose it's built around: bright and green at first, then true rose through the heart, finished with clean musk and cedar.",
-    imageUrl: "",
+    imageUrl: `${REPO}/ward-taifi.png`,
     variants: [
       {
         size: "30ml", price: 62, stock: 200, moq: 1, cartonSize: 12,
@@ -79,7 +80,7 @@ const products = [
     notes: { top: ["Bergamot", "Sea Salt"], heart: ["Fig", "Jasmine"], base: ["Ambergris", "Driftwood"] },
     description:
       "Named after the star sailors once steered by. Citrus and salt at the open, fig and jasmine through the middle, a quiet ambergris base.",
-    imageUrl: "",
+    imageUrl: `${REPO}/suhail.png`,
     variants: [
       {
         size: "30ml", price: 48, stock: 260, moq: 1, cartonSize: 12,
@@ -135,7 +136,7 @@ const products = [
     notes: { top: ["Cypress", "Black Pepper"], heart: ["Vetiver", "Leather"], base: ["Oud", "Patchouli"] },
     description:
       "Named for the lote tree. Sharp cypress and pepper give way to vetiver and leather, then a long, dry oud and patchouli base that lasts well into the night.",
-    imageUrl: "",
+    imageUrl: `${REPO}/sidrah.png`,
     variants: [
       {
         size: "30ml", price: 64, stock: 190, moq: 1, cartonSize: 12,
@@ -198,7 +199,7 @@ const products = [
     notes: { top: ["Saffron"], heart: ["Rose", "Amber"], base: ["Musk"] },
     description:
       "A concentrated oil built around saffron and rose over a warm amber-musk base. Alcohol-free and long-lasting directly on skin.",
-    imageUrl: "",
+    imageUrl: `${REPO}/zafaran.png`,
     variants: [
       {
         size: "3ml", price: 28, stock: 400, moq: 1, cartonSize: 100,
@@ -227,7 +228,7 @@ const products = [
     notes: { top: ["White Musk"], heart: ["Jasmine"], base: ["Sandalwood"] },
     description:
       "A clean white musk oil, soft jasmine through the heart, a light sandalwood base. Wears close and quiet, good for everyday and for layering.",
-    imageUrl: "",
+    imageUrl: `${REPO}/misk-abyad.png`,
     variants: [
       {
         size: "3ml", price: 22, stock: 420, moq: 1, cartonSize: 100,
@@ -255,7 +256,7 @@ const products = [
     notes: { top: ["Oud"], heart: ["Saffron", "Rose"], base: ["Amber"] },
     description:
       "A dense, traditional oud oil. Smoky and deep from the first moment, with saffron and rose only lightly softening it. For those who want oud that reads as oud.",
-    imageUrl: "",
+    imageUrl: `${REPO}/oud-dakhili.png`,
     variants: [
       {
         size: "3ml", price: 38, stock: 260, moq: 1, cartonSize: 100,
@@ -284,7 +285,7 @@ const products = [
     notes: { top: ["Amber"], heart: ["Labdanum", "Vanilla"], base: ["Musk"] },
     description:
       "A warm, resinous amber oil, sweetened lightly with vanilla and grounded in musk. Sits close to the skin and lasts most of the day from a single dab.",
-    imageUrl: "",
+    imageUrl: `${REPO}/amber-sharqi.png`,
     variants: [
       {
         size: "3ml", price: 24, stock: 340, moq: 1, cartonSize: 100,
@@ -314,7 +315,7 @@ const products = [
     notes: { top: ["Oud Chips"], heart: ["Frankincense"], base: ["Amber Resin"] },
     description:
       "Hand-dipped oud chips for burning, not wearing. Deep frankincense and amber smoke, meant for the home rather than the skin.",
-    imageUrl: "",
+    imageUrl: `${REPO}/bakhoor-muallaq.png`,
     variants: [
       {
         size: "40g", price: 36, stock: 300, moq: 1, cartonSize: 48,
