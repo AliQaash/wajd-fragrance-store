@@ -5,5 +5,6 @@ build/
 dist/
 test-results/
 playwright-report/
+playwright-tests/report/
 *.log
 .DS_Store

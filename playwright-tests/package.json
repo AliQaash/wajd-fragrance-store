@@ -10,6 +10,8 @@
     "report": "playwright show-report report"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1"
+    "@playwright/test": "^1.61.1",
+    "firebase-tools": "^13.20.0",
+    "mongodb-memory-server": "^10.1.0"
   }
 }

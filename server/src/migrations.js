@@ -50,6 +50,31 @@ const MIGRATIONS = [
       return `${orders.length} orders`;
     },
   },
+  {
+    id: "2026-10-webp-images",
+    // The original catalog photos were 1.5 to 8 MB PNGs, and four of them were
+    // attached to the wrong product (Sidrah, Misk Abyad, Suhail and Bakhoor
+    // Muallaq were rotated by one). Points each seeded product at its own
+    // optimised WebP. Only touches images still on the original repo path, so
+    // an image an admin has changed is left alone.
+    async run() {
+      const BASE = "https://raw.githubusercontent.com/AliQaash/wajd-fragrance-store/main/docs/product-images/";
+      const FILES = {
+        layl: "layl", "ward-taifi": "ward-taifi", suhail: "suhail", qamar: "qamar", sidrah: "sidrah", nur: "nur",
+        "zafaran-oil": "zafaran", "misk-abyad": "misk-abyad", "oud-dakhili": "oud-dakhili",
+        "amber-sharqi": "amber-sharqi", "bakhoor-muallaq": "bakhoor-muallaq",
+      };
+      let changed = 0;
+      for (const [slug, file] of Object.entries(FILES)) {
+        const res = await Product.updateOne(
+          { slug, imageUrl: { $regex: `^${BASE.replace(/[.]/g, "\\.")}[a-z-]+\\.png$` } },
+          { $set: { imageUrl: `${BASE}web/${file}.webp` } }
+        );
+        changed += res.modifiedCount;
+      }
+      return `${changed} images`;
+    },
+  },
 ];
 
 async function runMigrations() {

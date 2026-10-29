@@ -2,12 +2,15 @@
   "name": "wajd",
   "version": "1.0.0",
   "private": true,
-  "description": "Wajd fragrance store — run both server and client with one command",
+  "description": "Wajd fragrance store \u2014 run both server and client with one command",
   "scripts": {
     "server": "npm run dev --prefix server",
     "client": "npm start --prefix client",
     "dev": "concurrently -n SERVER,CLIENT -c blue,magenta \"npm:server\" \"npm:client\"",
-    "install:all": "npm install --prefix server && npm install --prefix client"
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "test:api": "npm test --prefix server",
+    "test:e2e": "npm install --prefix playwright-tests && npm test --prefix playwright-tests",
+    "build": "npm run build --prefix client"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

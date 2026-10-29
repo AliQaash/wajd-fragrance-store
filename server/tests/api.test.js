@@ -415,4 +415,14 @@ describe("migrations", () => {
     await runMigrations(); // already recorded: does nothing
     expect(variant(await bySlug("zafaran-oil"), "3ml").moq).toBe(1);
   });
+
+  test("moves seeded products to their own WebP image, leaving admin-changed images alone", async () => {
+    const base = "https://raw.githubusercontent.com/AliQaash/wajd-fragrance-store/main/docs/product-images/";
+    await mongoose.connection.collection("migrations").deleteOne({ _id: "2026-10-webp-images" });
+    await Product.updateOne({ slug: "sidrah" }, { imageUrl: `${base}bakhoor-muallaq.png` }); // old wrong file
+    await Product.updateOne({ slug: "layl" }, { imageUrl: "https://cdn.example.com/custom.jpg" });
+    await runMigrations();
+    expect((await bySlug("sidrah")).imageUrl).toBe(`${base}web/sidrah.webp`);
+    expect((await bySlug("layl")).imageUrl).toBe("https://cdn.example.com/custom.jpg");
+  });
 });
