@@ -1,31 +1,26 @@
 const express = require("express");
 const Anthropic = require("@anthropic-ai/sdk");
 const { requireAuth, requireAdmin } = require("../middleware/auth");
+const { validateBody } = require("../middleware/validate");
+const { describeBody } = require("../validation/schemas");
 
 const router = express.Router();
 const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 
 /**
- * POST /api/ai/describe-product
- * Admin-only. Takes a perfume name plus a few fragrance notes and returns
- * a short, ready-to-publish product description. This is the one AI
- * integration point in an otherwise plain MERN store — small and real,
- * rather than bolted on. Gated behind requireAdmin so a public demo
- * can't be used to run up API costs.
+ * POST /api/ai/describe-product — admin only. Turns a name plus a few notes
+ * into a short product description. Admin-gated and rate limited so a public
+ * demo cannot be used to run up API costs.
  */
-router.post("/describe-product", requireAuth, requireAdmin, async (req, res) => {
+router.post("/describe-product", requireAuth, requireAdmin, validateBody(describeBody), async (req, res) => {
   if (!anthropic) {
-    return res.status(503).json({ error: "AI description writer is not configured on this server" });
+    return res.status(503).json({ error: "The AI description writer is not configured on this server" });
   }
-
   const { name, notes, family } = req.body;
-  if (!name || !notes) {
-    return res.status(400).json({ error: "name and notes are required" });
-  }
-
   try {
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: MODEL,
       max_tokens: 200,
       messages: [
         {
@@ -38,16 +33,15 @@ router.post("/describe-product", requireAuth, requireAdmin, async (req, res) => 
         },
       ],
     });
-
     const text = message.content
       .filter((block) => block.type === "text")
       .map((block) => block.text)
       .join("\n")
       .trim();
-
     res.json({ description: text });
   } catch (err) {
-    res.status(500).json({ error: "Failed to generate description" });
+    console.error("AI description failed:", err.message);
+    res.status(502).json({ error: "The AI writer did not respond. Try again in a moment." });
   }
 });
 

@@ -1,45 +1,35 @@
 const mongoose = require("mongoose");
 
+const TYPES = ["Spray", "Oil"];
+const CONCENTRATIONS = ["Parfum", "Eau de Parfum", "Eau de Toilette", "Concentrated Oil", "Bakhoor"];
+const FAMILIES = ["Woody", "Floral", "Oriental", "Fresh", "Gourmand", "Musk", "Incense"];
+
 /**
- * A single quantity-based price break, e.g. "buy 12 or more of this
- * variant, pay $54 each instead of $68". No account type or approval
- * needed — any buyer who orders enough gets the lower unit price,
- * same as how the old app showed a strikethrough price and a discount
- * badge, just extended across quantity instead of a single fixed sale.
+ * A quantity-based price break: "order minQty or more of this variant and
+ * every unit costs price". Any buyer who orders enough gets it; there is no
+ * separate wholesale account.
  */
 const priceTierSchema = new mongoose.Schema(
   {
-    minQty: { type: Number, required: true, min: 2 }, // 1 unit always uses variant.price
-    price: { type: Number, required: true, min: 0 }, // per-unit price at this quantity or above
+    minQty: { type: Number, required: true, min: 2 },
+    price: { type: Number, required: true, min: 0 },
   },
   { _id: false }
 );
 
 /**
- * A product size/variant with its own price.
- * Fragrance retail sells by bottle size (30ml / 50ml / 100ml), not by
- * scaling a per-ml base price the way the old attar pricing model did —
- * larger bottles are NOT strictly cheaper per ml in real perfumery, so
- * each variant carries an explicit price rather than a derived one.
+ * One bottle size. Each size carries its own price because larger bottles are
+ * not strictly cheaper per ml in real perfumery.
  */
 const variantSchema = new mongoose.Schema(
   {
-    size: { type: String, required: true, trim: true }, // e.g. "30ml", "50ml", "100ml"
-    price: { type: Number, required: true, min: 0 }, // unit price at quantity 1
-    compareAtPrice: { type: Number, min: 0 }, // optional "was" price for a straight sale
-    stock: { type: Number, default: 20, min: 0 },
-
-    // Bulk pricing — sorted ascending by minQty. The effective unit price
-    // for a given order quantity is the price on the highest tier whose
-    // minQty is <= that quantity, falling back to `price` if none match.
-    // The admin sets these thresholds freely (add/remove/edit rows in the
-    // product form); the pre-validate hook below is the guardrail that
-    // keeps whatever they enter internally consistent.
+    size: { type: String, required: true, trim: true }, // "30ml", "40g"
+    price: { type: Number, required: true, min: 0 }, // unit price from MOQ up
+    compareAtPrice: { type: Number, min: 0 }, // optional "was" price
+    stock: { type: Number, default: 0, min: 0 },
+    moq: { type: Number, default: 1, min: 1 }, // smallest quantity shipped
+    cartonSize: { type: Number, min: 1 }, // units per sealed carton
     priceTiers: { type: [priceTierSchema], default: [] },
-
-    // Import/export ordering details
-    moq: { type: Number, default: 1, min: 1 }, // minimum order quantity for this variant
-    cartonSize: { type: Number, min: 1 }, // units per carton/case, if sold that way
   },
   { _id: false }
 );
@@ -48,24 +38,9 @@ const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    // Top-level category the storefront filters/tabs by. Kept separate from
-    // "concentration" below: type is "what section is this in", concentration
-    // is "what exactly is in the bottle" (a detail shown on the product page).
-    type: {
-      type: String,
-      enum: ["Spray", "Oil"],
-      required: true,
-    },
-    concentration: {
-      type: String,
-      enum: ["Parfum", "Eau de Parfum", "Eau de Toilette", "Concentrated Oil", "Bakhoor"],
-      default: "Eau de Parfum",
-    },
-    family: {
-      type: String,
-      enum: ["Woody", "Floral", "Oriental", "Fresh", "Gourmand", "Musk", "Incense"],
-      required: true,
-    },
+    type: { type: String, enum: TYPES, required: true }, // storefront section
+    concentration: { type: String, enum: CONCENTRATIONS, default: "Eau de Parfum" },
+    family: { type: String, enum: FAMILIES, required: true },
     notes: {
       top: [{ type: String, trim: true }],
       heart: [{ type: String, trim: true }],
@@ -75,14 +50,10 @@ const productSchema = new mongoose.Schema(
     imageUrl: { type: String, default: "" },
     variants: {
       type: [variantSchema],
-      validate: (v) => Array.isArray(v) && v.length > 0,
+      validate: { validator: (v) => Array.isArray(v) && v.length > 0, message: "At least one size is required" },
     },
-
-    // Import/export details a Pakistani distributor or overseas buyer
-    // will actually ask about before placing a bulk order.
-    hsCode: { type: String, trim: true }, // customs tariff classification, e.g. "3303.00"
+    hsCode: { type: String, trim: true }, // customs tariff code, e.g. 3303.00
     originCountry: { type: String, trim: true, default: "Pakistan" },
-
     rating: { type: Number, default: 5, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0, min: 0 },
     featured: { type: Boolean, default: false },
@@ -94,37 +65,42 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ name: "text", description: "text" });
 
 /**
- * Keeps bulk pricing sane no matter what order the admin enters tiers in.
- * - Auto-sorts each variant's priceTiers ascending by minQty, so the admin
- *   can add rows in any order in the product form.
- * - Rejects duplicate thresholds (two tiers with the same minQty).
- * - Rejects a tier priced at or above the base price, or at or above a
- *   lower-quantity tier — a "bulk discount" that isn't actually cheaper
- *   is almost certainly a typo, and this catches it before it saves.
- * Errors are attached per-variant so the admin UI can show exactly which
- * size and which tier needs fixing, rather than one generic message.
+ * Keeps sizes and bulk pricing internally consistent whatever order the admin
+ * enters things in. Runs on create and on save(); product updates go through
+ * save() for exactly this reason (findByIdAndUpdate would skip it).
  */
 productSchema.pre("validate", function (next) {
+  const sizes = new Set();
   for (const variant of this.variants || []) {
-    if (!variant.priceTiers || variant.priceTiers.length === 0) continue;
+    const key = (variant.size || "").toLowerCase();
+    if (sizes.has(key)) return next(new Error(`Size "${variant.size}" is listed twice`));
+    sizes.add(key);
 
+    if (variant.compareAtPrice != null && variant.compareAtPrice <= variant.price) {
+      return next(new Error(`${variant.size}: the "was" price must be higher than the price`));
+    }
+
+    if (!variant.priceTiers || variant.priceTiers.length === 0) continue;
     variant.priceTiers.sort((a, b) => a.minQty - b.minQty);
 
     let previousPrice = variant.price;
-    const seenQuantities = new Set();
-
+    const seen = new Set();
     for (const tier of variant.priceTiers) {
-      if (seenQuantities.has(tier.minQty)) {
+      if (seen.has(tier.minQty)) {
+        return next(new Error(`${variant.size}: two bulk tiers start at ${tier.minQty} units`));
+      }
+      seen.add(tier.minQty);
+      if (tier.minQty <= variant.moq) {
         return next(
-          new Error(`${variant.size}: duplicate bulk tier at quantity ${tier.minQty} — each threshold must be unique`)
+          new Error(
+            `${variant.size}: a bulk tier must start above the minimum order of ${variant.moq} (tier at ${tier.minQty})`
+          )
         );
       }
-      seenQuantities.add(tier.minQty);
-
       if (tier.price >= previousPrice) {
         return next(
           new Error(
-            `${variant.size}: the tier at quantity ${tier.minQty} (price ${tier.price}) must be cheaper than the price at the tier below it (${previousPrice}) — a bulk tier has to actually be a discount`
+            `${variant.size}: the tier at ${tier.minQty} units (${tier.price}) must be cheaper than the price below it (${previousPrice})`
           )
         );
       }
@@ -135,3 +111,6 @@ productSchema.pre("validate", function (next) {
 });
 
 module.exports = mongoose.model("Product", productSchema);
+module.exports.TYPES = TYPES;
+module.exports.CONCENTRATIONS = CONCENTRATIONS;
+module.exports.FAMILIES = FAMILIES;

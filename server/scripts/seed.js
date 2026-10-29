@@ -202,7 +202,7 @@ const products = [
     imageUrl: `${REPO}/zafaran.png`,
     variants: [
       {
-        size: "3ml", price: 28, stock: 400, moq: 1, cartonSize: 100,
+        size: "3ml", price: 28, stock: 400, moq: 3, cartonSize: 100,
         priceTiers: [{ minQty: 24, price: 23 }, { minQty: 100, price: 19 }],
       },
       {
@@ -231,7 +231,7 @@ const products = [
     imageUrl: `${REPO}/misk-abyad.png`,
     variants: [
       {
-        size: "3ml", price: 22, stock: 420, moq: 1, cartonSize: 100,
+        size: "3ml", price: 22, stock: 420, moq: 3, cartonSize: 100,
         priceTiers: [{ minQty: 24, price: 18 }, { minQty: 100, price: 15 }],
       },
       {
@@ -259,7 +259,7 @@ const products = [
     imageUrl: `${REPO}/oud-dakhili.png`,
     variants: [
       {
-        size: "3ml", price: 38, stock: 260, moq: 1, cartonSize: 100,
+        size: "3ml", price: 38, stock: 260, moq: 3, cartonSize: 100,
         priceTiers: [{ minQty: 24, price: 32 }, { minQty: 100, price: 27 }],
       },
       {
@@ -288,7 +288,7 @@ const products = [
     imageUrl: `${REPO}/amber-sharqi.png`,
     variants: [
       {
-        size: "3ml", price: 24, stock: 340, moq: 1, cartonSize: 100,
+        size: "3ml", price: 24, stock: 340, moq: 3, cartonSize: 100,
         priceTiers: [{ minQty: 24, price: 20 }, { minQty: 100, price: 17 }],
       },
       {
@@ -318,7 +318,7 @@ const products = [
     imageUrl: `${REPO}/bakhoor-muallaq.png`,
     variants: [
       {
-        size: "40g", price: 36, stock: 300, moq: 1, cartonSize: 48,
+        size: "40g", price: 36, stock: 300, moq: 4, cartonSize: 48,
         priceTiers: [{ minQty: 24, price: 30 }, { minQty: 96, price: 25 }],
       },
       {
@@ -345,7 +345,12 @@ async function seed() {
   await mongoose.disconnect();
 }
 
-seed().catch((err) => {
-  console.error("Seed failed:", err);
-  process.exit(1);
-});
+module.exports = { products };
+
+// Only touch the database when run directly (npm run seed), not when tests import the catalog.
+if (require.main === module) {
+  seed().catch((err) => {
+    console.error("Seed failed:", err);
+    process.exit(1);
+  });
+}

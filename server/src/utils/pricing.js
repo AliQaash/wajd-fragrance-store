@@ -1,17 +1,28 @@
 /**
- * Given a variant (with its base price and optional priceTiers) and an
- * order quantity, returns the correct per-unit price. Tiers are checked
- * from highest minQty down, so the best qualifying discount wins.
+ * Pricing rules shared by the cart quote and order creation.
  *
- * This lives here (not just in frontend display logic) because the
- * server must recompute prices itself when an order is placed — never
- * trust a price the client sends, or a customer could submit any price
- * they want with a tampered request.
+ * A variant has a base unit price (applies from its MOQ upward) and optional
+ * bulk tiers: "order minQty or more and every unit drops to price". The best
+ * tier the quantity qualifies for wins. The server always recomputes prices
+ * itself; nothing price-related is ever taken from the client.
  */
+function sortedTiers(variant) {
+  return [...(variant.priceTiers || [])].sort((a, b) => a.minQty - b.minQty);
+}
+
 function getUnitPrice(variant, quantity) {
-  const tiers = [...(variant.priceTiers || [])].sort((a, b) => b.minQty - a.minQty);
+  const tiers = sortedTiers(variant).reverse();
   const match = tiers.find((tier) => quantity >= tier.minQty);
   return match ? match.price : variant.price;
 }
 
-module.exports = { getUnitPrice };
+function nextTier(variant, quantity) {
+  return sortedTiers(variant).find((tier) => quantity < tier.minQty) || null;
+}
+
+/** Money is stored in dollars; round to cents to avoid float drift (0.1 + 0.2). */
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}
+
+module.exports = { getUnitPrice, nextTier, sortedTiers, round2 };

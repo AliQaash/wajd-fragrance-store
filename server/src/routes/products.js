@@ -1,73 +1,87 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Product = require("../models/Product");
-const { requireAuth, requireAdmin } = require("../middleware/auth");
+const { FAMILIES, TYPES } = Product;
 
 const router = express.Router();
 
-const FAMILIES = ["Woody", "Floral", "Oriental", "Fresh", "Gourmand", "Musk", "Incense"];
+const SORTS = {
+  featured: { featured: -1, createdAt: -1 },
+  "price-asc": { minPrice: 1, name: 1 },
+  "price-desc": { minPrice: -1, name: 1 },
+  newest: { createdAt: -1 },
+  name: { name: 1 },
+};
 
-// GET /api/products — public catalog, active products only
-// Optional ?type=Spray|Oil (Perfumes vs Concentrated Oils section)
-// Optional ?family=Woody|Floral|... (scent category)
-router.get("/", async (req, res) => {
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * GET /api/products — public catalog of active products.
+ * ?q= search across name, notes, family and description (partial match)
+ * ?type=Spray|Oil  ?family=Woody|...  ?sort=featured|price-asc|price-desc|newest|name
+ * ?page=1&limit=12 → { items, total, page, pages }
+ */
+router.get("/", async (req, res, next) => {
   try {
-    const filter = { active: true };
-    if (req.query.type && ["Spray", "Oil"].includes(req.query.type)) {
-      filter.type = req.query.type;
+    const match = { active: true };
+    if (TYPES.includes(req.query.type)) match.type = req.query.type;
+    if (FAMILIES.includes(req.query.family)) match.family = req.query.family;
+    const q = String(req.query.q || "").trim().slice(0, 60);
+    if (q) {
+      const rx = new RegExp(escapeRegex(q), "i");
+      match.$or = [
+        { name: rx },
+        { family: rx },
+        { description: rx },
+        { "notes.top": rx },
+        { "notes.heart": rx },
+        { "notes.base": rx },
+      ];
     }
-    if (req.query.family && FAMILIES.includes(req.query.family)) {
-      filter.family = req.query.family;
-    }
-    const products = await Product.find(filter).sort({ featured: -1, createdAt: -1 });
-    res.json(products);
+    const sort = SORTS[req.query.sort] || SORTS.featured;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 48);
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+
+    const [result] = await Product.aggregate([
+      { $match: match },
+      { $addFields: { minPrice: { $min: "$variants.price" } } },
+      { $sort: sort },
+      {
+        $facet: {
+          items: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+          total: [{ $count: "n" }],
+        },
+      },
+    ]);
+    const total = result.total[0] ? result.total[0].n : 0;
+    res.json({ items: result.items, total, page, pages: Math.max(Math.ceil(total / limit), 1) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
-// GET /api/products/:slug — single product by slug
-router.get("/:slug", async (req, res) => {
+// GET /api/products/id/:id — used by "Reorder" to rebuild a cart from an old order
+router.get("/id/:id", async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Product not found" });
+    const product = await Product.findOne({ _id: req.params.id, active: true });
+    if (!product) return res.status(404).json({ error: "Product not found" });
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/products/:slug — one active product
+router.get("/:slug", async (req, res, next) => {
   try {
     const product = await Product.findOne({ slug: req.params.slug, active: true });
     if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/products — admin only
-router.post("/", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const product = await Product.create(req.body);
-    res.status(201).json(product);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// PUT /api/products/:id — admin only
-router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!product) return res.status(404).json({ error: "Product not found" });
-    res.json(product);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// DELETE /api/products/:id — admin only, soft delete so historical orders still resolve
-router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const product = await Product.findByIdAndUpdate(req.params.id, { active: false }, { new: true });
-    if (!product) return res.status(404).json({ error: "Product not found" });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
