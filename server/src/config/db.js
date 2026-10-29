@@ -12,6 +12,7 @@ async function connectDB({ retryMs = 15000 } = {}) {
   mongoose.set("strictQuery", true);
 
   for (;;) {
+    if (dbReady()) return; // the driver reconnected on its own
     try {
       await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
       console.log(`MongoDB connected: ${mongoose.connection.name}`);
