@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -19,10 +19,14 @@ const friendly = (err) => MESSAGES[err.code] || err.message.replace("Firebase: "
 
 /** Screen 4: sign in or create an account, then go back to where the buyer was. */
 export default function LoginPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [params] = useSearchParams();
-  const next = params.get("next") || "/";
+  const requested = params.get("next") || "/";
+  // Only same-site paths, and never send a customer into the admin area.
+  const destination = (admin) => {
+    const safe = requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
+    return !admin && safe.startsWith("/admin") ? "/" : safe;
+  };
   const [mode, setMode] = useState("signin");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -34,7 +38,7 @@ export default function LoginPage() {
   }, [mode]);
 
   // While signing up, wait for the name to be saved before leaving the page.
-  if (user && !busy) return <Navigate to={next} replace />;
+  if (user && !busy) return <Navigate to={destination(isAdmin)} replace />;
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -55,7 +59,8 @@ export default function LoginPage() {
         const cred = await createUserWithEmailAndPassword(auth, form.email.trim(), form.password);
         await updateProfile(cred.user, { displayName: form.name.trim() });
       }
-      navigate(next, { replace: true });
+      // No navigate here: once busy clears, the signed-in branch above redirects
+      // with the role the auth context knows, so a click made meanwhile is not undone.
     } catch (err) {
       setNotice({ tone: "error", text: friendly(err) });
     } finally {
@@ -88,7 +93,7 @@ export default function LoginPage() {
             Create account
           </button>
         </div>
-        {next === "/checkout" && <p className="help center">Sign in to place your order. Your cart is saved.</p>}
+        {requested === "/checkout" && <p className="help center">Sign in to place your order. Your cart is saved.</p>}
         <form onSubmit={submit} noValidate>
           {mode === "signup" && (
             <Field label="Your name" error={errors.name}>

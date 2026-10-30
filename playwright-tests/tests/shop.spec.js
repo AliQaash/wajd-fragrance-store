@@ -205,4 +205,39 @@ test.describe("admin", () => {
     await page.goto("/admin");
     await expect(page.getByText("Admins only")).toBeVisible();
   });
+
+  test("signing out from admin lands on the shop, clears the cart, and a customer signing in next stays out of admin", async ({ page }) => {
+    const customer = { name: "Next Person", email: uniqueEmail("next"), password: "buyer-pass-4" };
+    await page.goto("/login");
+    await signUp(page, customer);
+    await signOut(page);
+
+    await signIn(page, ADMIN);
+    await addToCart(page, "sidrah", "30ml", 1);
+    await page.goto("/admin/orders");
+    await expect(page.getByRole("heading", { name: "Orders" })).toBeVisible();
+    await page.getByRole("button", { name: "Sign out" }).click();
+
+    // Home page, signed out, empty cart, no "next=/admin" left behind.
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Cart, 0 items" })).toBeVisible();
+
+    await page.getByRole("link", { name: "Sign in" }).click();
+    await page.getByLabel("Email").fill(customer.email);
+    await page.getByLabel("Password").fill(customer.password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).last().click();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText("Admins only")).toHaveCount(0);
+
+    // Even an explicit admin link sends a customer to the shop after sign-in.
+    await signOut(page);
+    await page.goto("/login?next=%2Fadmin");
+    await page.getByLabel("Email").fill(customer.email);
+    await page.getByLabel("Password").fill(customer.password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).last().click();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+  });
 });
