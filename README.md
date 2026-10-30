@@ -61,12 +61,12 @@ Both `.env` files are needed first; see `server/.env.example` and `client/.env.e
 
 ```bash
 npm run test:api        # 29 API tests against an in-memory MongoDB (no setup needed)
-npm run test:e2e        # 7 browser tests: Auth emulator + in-memory DB + the real client
+npm run test:e2e        # 8 browser tests: Auth emulator + in-memory DB + the real client
 ```
 
 The end-to-end suite starts everything it needs and never touches the live database or real accounts. It needs Java 11+ for the Auth emulator and, once, `npx playwright install chromium` inside `playwright-tests/`. `SHOTS=1 npm run test:e2e` also refreshes the screenshots in `docs/screenshots`.
 
-What the tests cover: merged-line tier pricing, MOQ refusal, price tampering, stock races and rollback, cancel restoring stock once, roles and other users' orders, every allowed and forbidden status move, card payment verification (including a wrong amount), product validation on create and edit, slugs, archive, dashboard numbers, migrations, guest-to-checkout sign-up, phone-width layout with no sideways scrolling.
+What the tests cover: merged-line tier pricing, MOQ refusal, price tampering, stock races and rollback, cancel restoring stock once, roles and other users' orders, every allowed and forbidden status move, card payment verification (including a wrong amount), product validation on create and edit, slugs, archive, dashboard numbers, migrations, guest-to-checkout sign-up, sign-out clearing the cart and never sending a customer into admin, phone-width layout with no sideways scrolling.
 
 ## Deployment
 

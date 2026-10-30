@@ -1,6 +1,6 @@
 # Wajd end-to-end tests
 
-Seven browser tests that use the store the way people do: a guest browsing and filtering, bulk tiers merging across two adds, MOQ on sample vials, a guest sent to sign up at checkout who keeps their cart and places a cash order, cancelling it, an admin approving, dispatching and delivering an order while the buyer watches it progress, an admin creating a product (with tier validation), editing stock and archiving it, customers being kept out of admin, and a phone-width check that nothing scrolls sideways.
+Eight browser tests that use the store the way people do: a guest browsing and filtering, bulk tiers merging across two adds, MOQ on sample vials, a guest sent to sign up at checkout who keeps their cart and places a cash order, cancelling it, an admin approving, dispatching and delivering an order while the buyer watches it progress, an admin creating a product (with tier validation), editing stock and archiving it, customers being kept out of admin, signing out from admin and a customer signing in next, and a phone-width check that nothing scrolls sideways.
 
 Nothing here touches the live site. `npm test` starts:
 
